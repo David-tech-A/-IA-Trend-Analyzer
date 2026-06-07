@@ -1,7 +1,9 @@
 # 📈 IA Trend Analyzer
 > Powered by Claude claude-opus-4-8 · Anthropic MCP Hackathon
 
-Es una app web con chat en lenguaje natural donde subes cualquier dataset en CSV, Excel o Jason (o la IA lo busca por ti) y Claude lo analiza automáticamente generando gráficas y reportes ejecutivos
+Es una app web con chat en lenguaje natural donde subes cualquier dataset en CSV, Excel o Jason (o la IA lo busca por ti) y Claude lo analiza automáticamente generando gráficas y reportes ejecutivos. 
+
+Corre el archivo de backend y luego abre el archivo de frontend para usarlo. 
 
 
 ## 🗂 Archivos del proyecto
