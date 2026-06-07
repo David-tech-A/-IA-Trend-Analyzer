@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IA Trend Analyzer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #09090f; --surface: #111118; --border: #1e1e2e;
+      --accent: #7effc4; --accent2: #ff6b6b; --accent3: #ffd166;
+      --text: #e8e8f0; --muted: #5a5a7a;
+      --chat-user: #1a1a2e; --chat-ai: #0f1923;
+      --radius: 12px;
+      --font-mono: 'Space Mono', monospace;
+      --font-display: 'Syne', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font-display); min-height: 100vh; display: flex; flex-direction: column; }
+
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 36px; border-bottom: 1px solid var(--border);
+      background: rgba(9,9,15,0.9); backdrop-filter: blur(12px);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo { display: flex; align-items: center; gap: 14px; }
+    .logo-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent), #3a9fff); border-radius: 8px; display: grid; place-items: center; font-size: 18px; }
+    .logo-text { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px; }
+    .logo-text span { color: var(--accent); }
+    .status-pill { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); padding: 6px 14px; border: 1px solid var(--border); border-radius: 999px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .app { display: grid; grid-template-columns: 320px 1fr; flex: 1; height: calc(100vh - 65px); }
+
+    .panel-left { border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+    .panel-section { padding: 20px; border-bottom: 1px solid var(--border); }
+    .panel-label { font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 14px; }
+
+    .upload-zone { border: 1.5px dashed var(--border); border-radius: var(--radius); padding: 28px 16px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
+    .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(126,255,196,0.04); }
+    .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .upload-icon { font-size: 2rem; margin-bottom: 8px; }
+    .upload-zone p { font-size: 0.8rem; color: var(--muted); }
+    .upload-zone strong { color: var(--accent); }
+
+    .or-divider { display: flex; align-items: center; gap: 12px; margin: 16px 0; font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); }
+    .or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .dataset-status { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; font-size: 0.8rem; display: none; }
+    .dataset-status.visible { display: block; }
+    .dataset-status .ds-name { color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+    .dataset-status .ds-meta { color: var(--muted); font-family: var(--font-mono); font-size: 0.7rem; }
+    .ds-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(126,255,196,0.1); color: var(--accent); padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-family: var(--font-mono); margin-top: 8px; }
+
+    .report-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; padding: 16px; }
+    .report-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; cursor: pointer; transition: border-color 0.2s; }
+    .report-item:hover { border-color: var(--accent); }
+    .ri-title { font-size: 0.8rem; font-weight: 700; margin-bottom: 3px; }
+    .ri-meta { font-size: 0.65rem; color: var(--muted); font-family: var(--font-mono); }
+    .ri-badge { display: inline-block; margin-top: 6px; background: rgba(61,99,255,0.15); color: #6e8fff; padding: 2px 8px; border-radius: 999px; font-size: 0.6rem; font-family: var(--font-mono); }
+    .empty-reports { color: var(--muted); font-family: var(--font-mono); font-size: 0.72rem; text-align: center; padding: 20px; line-height: 1.8; }
+
+    .panel-right { display: flex; flex-direction: column; overflow: hidden; }
+
+    .chart-area { padding: 20px 24px; border-bottom: 1px solid var(--border); display: none; background: var(--surface); }
+    .chart-area.visible { display: block; }
+    .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .chart-title { font-size: 0.85rem; font-weight: 700; }
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .chart-box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+    .chart-box canvas { max-height: 160px; }
+    .chart-box-label { font-family: var(--font-mono); font-size: 0.6rem; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+
+    .chat-messages { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 18px; scroll-behavior: smooth; }
+    .msg { display: flex; gap: 12px; max-width: 820px; animation: fadeUp 0.3s ease; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    .msg.user { flex-direction: row-reverse; margin-left: auto; }
+    .msg-avatar { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 14px; flex-shrink: 0; }
+    .msg.ai .msg-avatar { background: linear-gradient(135deg, var(--accent), #3a9fff); }
+    .msg.user .msg-avatar { background: var(--surface); border: 1px solid var(--border); }
+    .msg-bubble { background: var(--chat-ai); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; font-size: 0.88rem; line-height: 1.65; max-width: calc(100% - 50px); }
+    .msg.user .msg-bubble { background: var(--chat-user); border-color: rgba(126,255,196,0.2); }
+    .msg-bubble .highlight { color: var(--accent); font-weight: 700; }
+    .msg-bubble .code-tag { font-family: var(--font-mono); font-size: 0.75rem; background: rgba(126,255,196,0.1); color: var(--accent); padding: 2px 7px; border-radius: 4px; }
+
+    .typing-indicator { display: flex; align-items: center; gap: 6px; padding: 4px 0; }
+    .typing-indicator span { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: 0.4; animation: blink 1.2s infinite; }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+    .action-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .chip { border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; font-size: 0.75rem; cursor: pointer; background: transparent; color: var(--text); font-family: var(--font-display); transition: all 0.2s; }
+    .chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(126,255,196,0.05); }
+    .chip.accent { border-color: var(--accent); color: var(--accent); }
+
+    .report-card { background: linear-gradient(135deg, rgba(126,255,196,0.07), rgba(58,159,255,0.07)); border: 1px solid rgba(126,255,196,0.25); border-radius: var(--radius); padding: 16px; margin-top: 12px; }
+    .rc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .rc-title { font-weight: 800; font-size: 0.9rem; }
+    .rc-meta { font-size: 0.72rem; color: var(--muted); font-family: var(--font-mono); }
+    .rc-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 12px; }
+    .rc-stat { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; text-align: center; }
+    .rc-stat-val { font-size: 1.1rem; font-weight: 800; color: var(--accent); }
+    .rc-stat-label { font-size: 0.6rem; color: var(--muted); font-family: var(--font-mono); text-transform: uppercase; }
+    .rc-drive-btn { display: flex; align-items: center; gap: 8px; background: var(--accent); color: #000; border: none; border-radius: 8px; padding: 10px 18px; font-size: 0.8rem; font-weight: 700; cursor: pointer; margin-top: 14px; width: 100%; justify-content: center; font-family: var(--font-display); transition: opacity 0.2s; }
+    .rc-drive-btn:hover { opacity: 0.85; }
+
+    .chat-input-area { padding: 18px 24px; border-top: 1px solid var(--border); background: var(--bg); }
+    .input-row { display: flex; gap: 10px; align-items: flex-end; }
+    .input-box { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; color: var(--text); font-family: var(--font-display); font-size: 0.88rem; resize: none; outline: none; transition: border-color 0.2s; max-height: 120px; min-height: 46px; }
+    .input-box:focus { border-color: var(--accent); }
+    .input-box::placeholder { color: var(--muted); }
+    .send-btn { width: 46px; height: 46px; border-radius: 10px; background: var(--accent); border: none; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; transition: opacity 0.2s; font-size: 1.1rem; }
+    .send-btn:hover { opacity: 0.85; }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .input-hint { font-family: var(--font-mono); font-size: 0.62rem; color: var(--muted); margin-top: 8px; display: flex; gap: 16px; }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">📈</div>
+    <div class="logo-text">IA <span>Trend</span> Analyzer</div>
+  </div>
+  <div class="status-pill">
+    <div class="dot"></div>
+    <span id="backendStatusText">Conectando...</span>
+  </div>
+</header>
+
+<div class="app">
+  <!-- LEFT -->
+  <div class="panel-left">
+    <div class="panel-section">
+      <div class="panel-label">Dataset</div>
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept=".csv,.xlsx,.json" />
+        <div class="upload-icon">📂</div>
+        <p><strong>Sube tu dataset</strong></p>
+        <p>CSV · Excel · JSON</p>
+      </div>
+      <div class="or-divider">O pide a la IA que lo busque</div>
+      <div class="dataset-status" id="datasetStatus">
+        <div class="ds-name" id="dsName">—</div>
+        <div class="ds-meta" id="dsMeta">—</div>
+        <span class="ds-badge">✓ Dataset listo</span>
+      </div>
+    </div>
+    <div class="panel-label" style="padding:16px 20px 0">Reportes guardados</div>
+    <div class="report-list" id="reportList">
+      <div class="empty-reports">Aún no hay reportes.<br/>Empieza una conversación 💬</div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="panel-right">
+    <div class="chart-area" id="chartArea">
+      <div class="chart-header">
+        <div class="chart-title">📊 Visualización del análisis</div>
+        <span style="font-size:0.7rem;color:var(--muted);font-family:var(--font-mono)" id="chartTimestamp"></span>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-box"><div class="chart-box-label">Tendencia principal</div><canvas id="chart1"></canvas></div>
+        <div class="chart-box"><div class="chart-box-label">Distribución</div><canvas id="chart2"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+      <div class="msg ai">
+        <div class="msg-avatar">🤖</div>
+        <div class="msg-bubble">
+          ¡Hola! Soy <span class="highlight">IA Trend Analyzer</span>, powered by Claude.<br><br>
+          Sube tu dataset o pídeme que busque los datos que necesitas.
+          <div class="action-chips">
+            <button class="chip" onclick="sendChip('Busca datos de ventas de e-commerce 2024')">📦 Ventas e-commerce</button>
+            <button class="chip" onclick="sendChip('Busca datos de tendencias de redes sociales')">📱 Redes sociales</button>
+            <button class="chip" onclick="sendChip('Busca datos financieros del mercado')">💹 Datos financieros</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <div class="input-row">
+        <textarea class="input-box" id="chatInput" placeholder="Ej: ¿Cuál fue el mejor mes en ventas? ¿Qué productos tienen proyección positiva?" rows="1" onkeydown="handleKey(event)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+      </div>
+      <div class="input-hint">
+        <span>⌨ Enter enviar · Shift+Enter nueva línea</span>
+        <span id="backendStatus">⬤ Conectando...</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:5001';
+let currentDataset = null, conversationHistory = [], reportCount = 0;
+let chart1Instance = null, chart2Instance = null;
+
+async function checkBackend() {
+  try {
+    const r = await fetch(`${API}/health`);
+    if (r.ok) {
+      document.getElementById('backendStatus').textContent = '⬤ Backend: conectado';
+      document.getElementById('backendStatus').style.color = 'var(--accent)';
+      document.getElementById('backendStatusText').textContent = 'Claude claude-opus-4-8 · Online';
+    }
+  } catch {
+    document.getElementById('backendStatus').textContent = '⬤ Backend: desconectado';
+    document.getElementById('backendStatus').style.color = 'var(--accent2)';
+    document.getElementById('backendStatusText').textContent = 'Backend desconectado';
+  }
+}
+checkBackend(); setInterval(checkBackend, 8000);
+
+const fileInput = document.getElementById('fileInput');
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+async function handleFile(file) {
+  if (!file) return;
+  addMessage('ai', `⏳ Procesando <span class="highlight">${file.name}</span>...`);
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const r = await fetch(`${API}/upload`, { method: 'POST', body: formData });
+    const data = await r.json();
+    console.log('Upload response:', data);
+    if (data.success) {
+      currentDataset = data;
+      showDatasetStatus(file.name, data.rows, data.columns);
+      addMessage('ai', `✅ Dataset cargado: <span class="highlight">${file.name}</span><br>
+        <span class="highlight">${data.rows} filas</span> · <span class="highlight">${data.columns.length} columnas</span>: <span class="code-tag">${data.columns.slice(0,5).join(', ')}${data.columns.length>5?'...':''}</span><br><br>
+        Tengo los datos. ¿Qué quieres saber?
+        <div class="action-chips">
+          <button class="chip accent" onclick="sendChip('Dime el mejor rendimiento del dataset')">🏆 Mejor rendimiento</button>
+          <button class="chip" onclick="sendChip('Muéstrame las tendencias principales')">📈 Tendencias</button>
+          <button class="chip" onclick="sendChip('Haz proyecciones para el próximo periodo')">🔮 Proyecciones</button>
+          <button class="chip" onclick="sendChip('Genera un reporte completo y guárdalo en Google Drive')">📄 Generar reporte</button>
+        </div>`);
+    } else { addMessage('ai', '❌ Error: ' + data.error); }
+  } catch(e) { 
+    addMessage('ai', '❌ No pude conectar con el backend.');
+    console.error('Upload error:', e);
+  }
+}
+
+function showDatasetStatus(name, rows, cols) {
+  document.getElementById('dsName').textContent = name;
+  document.getElementById('dsMeta').textContent = `${rows} filas · ${Array.isArray(cols)?cols.length:cols} columnas`;
+  document.getElementById('datasetStatus').classList.add('visible');
+}
+
+function handleKey(e) { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function sendChip(text) { document.getElementById('chatInput').value = text; sendMessage(); }
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = ''; input.style.height = 'auto';
+  addMessage('user', text);
+  conversationHistory.push({ role: 'user', content: text });
+  const typingId = showTyping();
+  document.getElementById('sendBtn').disabled = true;
+  try {
+    const isReport = text.toLowerCase().includes('reporte') || text.toLowerCase().includes('report');
+    const endpoint = isReport ? '/generate_report' : '/chat';
+    const r = await fetch(`${API}${endpoint}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ message: text, history: conversationHistory, dataset: currentDataset })
+    });
+    const data = await r.json();
+    removeTyping(typingId);
+    if (data.success) {
+      conversationHistory.push({ role: 'assistant', content: data.response });
+      if (data.is_search_request) { currentDataset = data.dataset_info; showDatasetStatus('Dataset IA', data.dataset_info?.rows||'?', data.dataset_info?.columns||[]); }
+      if (data.charts) renderCharts(data.charts);
+      if (data.drive_url) { addMessage('ai', formatResponse(data.response) + buildReportCard(data)); addReportToHistory(data); }
+      else addMessage('ai', formatResponse(data.response));
+    } else addMessage('ai', '❌ Error: ' + (data.error||'Algo salió mal'));
+  } catch { removeTyping(typingId); addMessage('ai', '❌ Error de conexión. ¿Está corriendo el notebook backend?'); }
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function formatResponse(t) {
+  return t.replace(/\*\*(.*?)\*\*/g,'<span class="highlight">$1</span>').replace(/`(.*?)`/g,'<span class="code-tag">$1</span>');
+}
+
+function buildReportCard(data) {
+  reportCount++;
+  return `<div class="report-card">
+    <div class="rc-header"><div style="font-size:1.2rem">📄</div><div><div class="rc-title">Reporte #${reportCount} generado</div><div class="rc-meta">${new Date().toLocaleString('es-SV')}</div></div></div>
+    ${data.stats ? `<div class="rc-stats">${Object.entries(data.stats).slice(0,3).map(([k,v])=>`<div class="rc-stat"><div class="rc-stat-val">${v}</div><div class="rc-stat-label">${k}</div></div>`).join('')}</div>` : ''}
+    <button class="rc-drive-btn" onclick="window.open('${data.drive_url}','_blank')">📁 Abrir en Google Drive</button>
+  </div>`;
+}
+
+function addReportToHistory(data) {
+  const list = document.getElementById('reportList');
+  const empty = list.querySelector('.empty-reports');
+  if (empty) empty.remove();
+  const item = document.createElement('div');
+  item.className = 'report-item';
+  item.innerHTML = `<div class="ri-title">Reporte #${reportCount}</div><div class="ri-meta">${new Date().toLocaleTimeString('es-SV')}</div><span class="ri-badge">Google Docs</span>`;
+  item.onclick = () => window.open(data.drive_url,'_blank');
+  list.prepend(item);
+}
+
+function addMessage(role, html) {
+  const c = document.getElementById('chatMessages');
+  const d = document.createElement('div');
+  d.className = `msg ${role}`;
+  d.innerHTML = `<div class="msg-avatar">${role==='ai'?'🤖':'👤'}</div><div class="msg-bubble">${html}</div>`;
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+
+function showTyping() {
+  const id = 'typing-'+Date.now();
+  const c = document.getElementById('chatMessages');
+  const d = document.createElement('div');
+  d.className='msg ai'; d.id=id;
+  d.innerHTML='<div class="msg-avatar">🤖</div><div class="msg-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>';
+  c.appendChild(d); c.scrollTop=c.scrollHeight; return id;
+}
+function removeTyping(id) { const el=document.getElementById(id); if(el) el.remove(); }
+
+function renderCharts(cd) {
+  document.getElementById('chartArea').classList.add('visible');
+  document.getElementById('chartTimestamp').textContent = new Date().toLocaleTimeString('es-SV');
+  if (chart1Instance) chart1Instance.destroy();
+  if (chart2Instance) chart2Instance.destroy();
+  const opts = { plugins:{legend:{labels:{color:'#e8e8f0',font:{size:10}}}}, scales:{x:{ticks:{color:'#5a5a7a',font:{size:9}},grid:{color:'#1e1e2e'}},y:{ticks:{color:'#5a5a7a',font:{size:9}},grid:{color:'#1e1e2e'}}} };
+  chart1Instance = new Chart(document.getElementById('chart1').getContext('2d'), { type:cd.chart1?.type||'line', data:{labels:cd.chart1?.labels||[],datasets:[{label:cd.chart1?.label||'Tendencia',data:cd.chart1?.data||[],borderColor:'#7effc4',backgroundColor:'rgba(126,255,196,0.1)',fill:true,tension:0.4,pointBackgroundColor:'#7effc4'}]}, options:opts });
+  chart2Instance = new Chart(document.getElementById('chart2').getContext('2d'), { type:cd.chart2?.type||'bar', data:{labels:cd.chart2?.labels||[],datasets:[{label:cd.chart2?.label||'Distribución',data:cd.chart2?.data||[],backgroundColor:['#7effc4','#ff6b6b','#ffd166','#3a9fff','#a78bfa','#fb923c']}]}, options:opts });
+}
+</script>
+</body>
+</html>
