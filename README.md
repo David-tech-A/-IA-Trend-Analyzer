@@ -9,7 +9,8 @@ Es una app web con chat en lenguaje natural donde subes cualquier dataset en CSV
 Corre el archivo de backend y luego abre el archivo de frontend para usarlo. 
 
 ## **Aqui te dejo un dataset que puedes probar te describo que contiene y ejemplos de preguntas que le puedes hacer al modelo. 
-## Descarga este CSV y subelo para probarlo    [Descargar dataset CSV](https://raw.githubusercontent.com/David-tech-A/IA-Trend-Analyzer/refs/heads/main/PIB_PerCapita_ESA_1970_2025.csv) 
+## Descarga este CSV y subelo para probarlo   
+[Descargar dataset CSV](https://raw.githubusercontent.com/David-tech-A/IA-Trend-Analyzer/refs/heads/main/PIB_PerCapita_ESA_1970_2025.csv) 
 
 Tiene datos anuales de El Salvador desde 1970 hasta 2025 — economía, inversión, empleo y desarrollo humano. Incluye PIB per cápita, remesas, inflación, desempleo, exportaciones, inversión extranjera. Cubre eventos clave como la dolarización, el COVID y el boom de remesas.
 
