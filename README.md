@@ -29,7 +29,12 @@ Ejemlos de preguntas:
 
 
 
-## 🗂 Archivos del proyecto
+
+
+
+
+
+🗂 Archivos del proyecto
 
 ```
 ia-trend-analyzer/
