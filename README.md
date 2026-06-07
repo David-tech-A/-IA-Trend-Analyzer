@@ -3,9 +3,29 @@
 
 Link del chat de Claude usado para esta pagina web:  https://claude.ai/share/4d31a71c-a9d1-47f1-9c77-458eefabdd8f 
 
-Es una app web con chat en lenguaje natural donde subes cualquier dataset en CSV, Excel o Jason (o la IA lo busca por ti) y Claude lo analiza automáticamente generando gráficas y reportes ejecutivos. 
+
+Es una app web con chat en lenguaje natural donde subes cualquier dataset en CSV, Excel o Jason (o la IA lo busca por ti) y Claude lo analiza automáticamente generando gráficas y reportes ejecutivos  pidele almenos dos graficas para que de una mejor respuesta. 
 
 Corre el archivo de backend y luego abre el archivo de frontend para usarlo. 
+
+Aqui te dejo un dataset que puedes probar te describo que contiene y ejemplos de preguntas que le puedes hacer al modelo. 
+Descarga este CSV y subelo para probarlo  [Descargar dataset CSV](https://raw.githubusercontent.com/David-tech-A/IA-Trend-Analyzer/refs/heads/main/PIB_PerCapita_ESA_1970_2025.csv) 
+
+Tiene datos anuales de El Salvador desde 1970 hasta 2025 — economía, inversión, empleo y desarrollo humano. Incluye PIB per cápita, remesas, inflación, desempleo, exportaciones, inversión extranjera. Cubre eventos clave como la dolarización, el COVID y el boom de remesas.
+
+Ejemlos de preguntas: 
+
+## **¿En qué años las remesas salvaron la economía y cómo se ve eso en el PIB? Hazme una gráfica.**
+
+## **¿Qué variable predice mejor el crecimiento del PIB per cápita? Muéstramelo con una gráfica de correlación.**
+
+## **¿Cómo se compara el impacto del COVID-19 en 2020 con el de la crisis de 2009 en términos del PIB y el desempleo?
+
+## **¿La dolarización de 2001 mejoró o empeoró la trayectoria del PIB per cápita?
+
+## **¿Hay evidencia en los datos de que la mejora de seguridad (2023–2025) impactó la inversión (FBKF o IED)?
+
+
 
 
 
